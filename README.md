@@ -10,7 +10,7 @@
 
 ### 1. Stock Trend Prediction with Multi-Granularity Data: A Contrastive Learning Approach with Adaptive Fusion
 
-> **Ref.** [Raw Paper]( PaperLibrary/Multi-Granularity Data/Hou_2021_CIKM_Stock Trend Prediction with Multi-granularity Data- A Contrastive Learning Approach with Adaptive Fusion.pdf)
+> **Ref.** [Raw Paper](PaperLibrary/Multi-Granularity Data/Hou_2021_CIKM_Stock Trend Prediction with Multi-granularity Data- A Contrastive Learning Approach with Adaptive Fusion.pdf)
 
 
 
