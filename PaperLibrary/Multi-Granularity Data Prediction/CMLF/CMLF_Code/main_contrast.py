@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
-import numpy as np
 import pandas as pd
 
 try:
@@ -12,11 +10,11 @@ except Exception:
 import loaders as loaders_module
 import models as models_module
 
-from common.utils import (
+from utils import (
     pprint, set_random_seed, create_output_path,
     robust_zscore, count_num_params
 )
-from common.functions import K, rmse, mae # BUG: sacred cannot save source files used in ingredients
+from functions import rmse, mae # BUG: sacred cannot save source files used in ingredients
 
 from sacred import Experiment
 from sacred.observers import FileStorageObserver

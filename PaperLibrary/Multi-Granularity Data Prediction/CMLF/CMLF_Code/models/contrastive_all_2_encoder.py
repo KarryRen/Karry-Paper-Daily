@@ -4,8 +4,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
-from torch.nn.parameter import Parameter
 
 from common.utils import pprint, AverageMeter
 from common.functions import get_loss_fn, get_metric_fn
@@ -13,13 +11,6 @@ from common.functions import get_loss_fn, get_metric_fn
 from sacred import Ingredient
 
 model_ingredient = Ingredient('contrastive_all_2_encoder')
-
-
-# try:
-#     from tensorboardX import SummaryWriter
-#     is_tensorboard_available = True
-# except Exception:
-#     is_tensorboard_available = False
 
 
 @model_ingredient.config
@@ -59,7 +50,7 @@ class Model(nn.Module):
 
         # Architecture
         self.hid_size = hid_size
-        self.input_size = input_shape[0][0]    #feature num
+        self.input_size = input_shape[0][0]  # feature num
         self.input_day = input_shape[0][2]
         self.input_daily_length = input_shape[0][1]
         self.input_highfreq_length = input_shape[1][1]
@@ -110,14 +101,14 @@ class Model(nn.Module):
                                     dropout=self.dropout)
 
         # self.rnn_daily = klass(input_size=self.hid_size + self.input_size,
-        self.rnn_daily_1 = klass(input_size=self.hid_size*2,
+        self.rnn_daily_1 = klass(input_size=self.hid_size * 2,
                                  hidden_size=self.hid_size,
                                  num_layers=self.rnn_layer,
                                  batch_first=True,
                                  dropout=self.dropout)
         self.fc_out_1 = nn.Linear(in_features=self.hid_size, out_features=self.hid_size)  # point contrast weight
-        self.fc_out_2 = nn.Linear(in_features=self.hid_size, out_features=1)                # output fc
-        self.fc_out_3 = nn.Linear(in_features=self.hid_size, out_features=self.hid_size*2)  # trend contrast weight
+        self.fc_out_2 = nn.Linear(in_features=self.hid_size, out_features=1)  # output fc
+        self.fc_out_3 = nn.Linear(in_features=self.hid_size, out_features=self.hid_size * 2)  # trend contrast weight
 
     def forward(self, data_daily, data_highfreq):
         data_highfreq = data_highfreq.view(-1, self.input_day, self.input_size, self.input_highfreq_length)
@@ -136,20 +127,20 @@ class Model(nn.Module):
         day_reps_1 = torch.cat(arr_1, dim=1)  # arr: [batch, 1, hid_size] * input_day -> [batch, input_day, input_size]
         day_reps_2 = torch.cat(arr_2, dim=1)
         data_daily = data_daily.view(-1, self.input_size, self.input_day)
-        data_daily = data_daily.permute(0, 2, 1)    # [batch, input_size, seq_len] -> [batch, seq_len, input_size]
-        data_daily_1 = self.net_daily_1(data_daily)     # [batch, seq_len, input_size] -> [batch, seq_len, hidden_size]
+        data_daily = data_daily.permute(0, 2, 1)  # [batch, input_size, seq_len] -> [batch, seq_len, input_size]
+        data_daily_1 = self.net_daily_1(data_daily)  # [batch, seq_len, input_size] -> [batch, seq_len, hidden_size]
         data_daily_2 = self.net_daily_2(data_daily)
 
         # Point contrast
         context = self.fc_out_1(data_daily_1)
         point_contrast_loss = 0
         for i in range(self.input_day):
-            daily_input = context[:, i, :]          # [batch, seq_len, hidden_size] -> [batch, hidden_size]
-            highfreq_input = day_reps_1[:, i, :]      # [batch, seq_len, hidden_size] -> [batch, hidden_size]
+            daily_input = context[:, i, :]  # [batch, seq_len, hidden_size] -> [batch, hidden_size]
+            highfreq_input = day_reps_1[:, i, :]  # [batch, seq_len, hidden_size] -> [batch, hidden_size]
             highfreq_input = self._generate_highfreq_data(highfreq_input)
 
-            highfreq_input = torch.reshape(highfreq_input, (-1, 1+self.negative_sample, self.hid_size))
-            daily_input = torch.unsqueeze(daily_input, 1)   # [batch, 1, hidden_size]
+            highfreq_input = torch.reshape(highfreq_input, (-1, 1 + self.negative_sample, self.hid_size))
+            daily_input = torch.unsqueeze(daily_input, 1)  # [batch, 1, hidden_size]
             dot_product = torch.mean(highfreq_input * daily_input, -1)
             log_l1 = torch.nn.functional.log_softmax(dot_product, dim=1)[:, 0]
             point_contrast_loss += -torch.mean(log_l1)
@@ -159,10 +150,10 @@ class Model(nn.Module):
 
         # Trend contrast
         new_data_daily = torch.reshape(torch.cat((data_daily_2 + day_reps_2, data_daily_1 + day_reps_1), dim=2),
-                                       (-1, self.hid_size*2 * self.input_day))
-        new_data_daily = self._generate_data(new_data_daily, size=self.hid_size*2)
-        new_data_daily = torch.reshape(new_data_daily, (-1, self.input_day+self.negative_sample, self.hid_size*2))
-        next = new_data_daily[:, -1-self.negative_sample:, :]
+                                       (-1, self.hid_size * 2 * self.input_day))
+        new_data_daily = self._generate_data(new_data_daily, size=self.hid_size * 2)
+        new_data_daily = torch.reshape(new_data_daily, (-1, self.input_day + self.negative_sample, self.hid_size * 2))
+        next = new_data_daily[:, -1 - self.negative_sample:, :]
         context_trend = self.fc_out_3(pred_1[:, -2, :])
         context_trend = torch.unsqueeze(context_trend, 1)
         dot_product_trend = torch.mean(next * context_trend, -1)
@@ -248,7 +239,7 @@ class Model(nn.Module):
                 if verbose:
                     pprint(
                         '\tvalid update from {:.6f} to {:.6f}, save checkpoint.'
-                            .format(best_score, valid_eval.avg))
+                        .format(best_score, valid_eval.avg))
                 best_score = valid_eval.avg
                 stop_steps = 0
                 best_params = copy.deepcopy(self.state_dict())

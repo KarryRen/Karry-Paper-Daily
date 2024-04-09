@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
-import numpy as np
 import pandas as pd
 import torch
 
@@ -14,11 +12,11 @@ except Exception:
 import loaders as loaders_module
 import models as models_module
 
-from common.utils import (
+from utils import (
     pprint, set_random_seed, create_output_path,
     robust_zscore, count_num_params
 )
-from common.functions import K, rmse, mae  # BUG: sacred cannot save source files used in ingredients
+from functions import rmse, mae  # BUG: sacred cannot save source files used in ingredients
 
 from sacred import Experiment
 from sacred.observers import FileStorageObserver
@@ -125,7 +123,7 @@ def main(_run, seed, loader_name, model_name, output_path, comt, run_on):
     pred['ori_label'] = ori_label.reindex(pred.index)
     _mean_1 = pred['ori_label'].mean()
     _std_1 = pred['ori_label'].std()
-    pred_score_1 = pred.score *  _std_1 +  _mean_1
+    pred_score_1 = pred.score * _std_1 + _mean_1
     RMSE_1 = rmse(pred_score_1, pred.ori_label)
     MAE_1 = mae(pred_score_1, pred.ori_label)
     pprint('RMSE_1:', RMSE_1)
@@ -133,12 +131,11 @@ def main(_run, seed, loader_name, model_name, output_path, comt, run_on):
 
     _mean_2 = pred.score.mean()
     _std_2 = pred.score.std()
-    pred_score_2 = pred.score *  _std_2 +  _mean_2
+    pred_score_2 = pred.score * _std_2 + _mean_2
     RMSE_2 = rmse(pred_score_2, pred.ori_label)
     MAE_2 = mae(pred_score_2, pred.ori_label)
     pprint('RMSE_2:', RMSE_2)
     pprint('MAE_2:', MAE_2)
-
 
     pprint('testing set:')
     pred = pd.DataFrame(index=test_set.index)
@@ -156,7 +153,7 @@ def main(_run, seed, loader_name, model_name, output_path, comt, run_on):
 
     _mean_1 = pred['ori_label'].mean()
     _std_1 = pred['ori_label'].std()
-    pred_score_1 = pred.score *  _std_1 +  _mean_1
+    pred_score_1 = pred.score * _std_1 + _mean_1
     RMSE_1 = rmse(pred_score_1, pred.ori_label)
     MAE_1 = mae(pred_score_1, pred.ori_label)
     pprint('RMSE_1:', RMSE_1)
@@ -164,13 +161,11 @@ def main(_run, seed, loader_name, model_name, output_path, comt, run_on):
 
     _mean_2 = pred.score.mean()
     _std_2 = pred.score.std()
-    pred_score_2 = pred.score *  _std_2 +  _mean_2
+    pred_score_2 = pred.score * _std_2 + _mean_2
     RMSE_2 = rmse(pred_score_2, pred.ori_label)
     MAE_2 = mae(pred_score_2, pred.ori_label)
     pprint('RMSE_2:', RMSE_2)
     pprint('MAE_2:', MAE_2)
-
-
 
     pprint('done.')
 
