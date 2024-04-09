@@ -14,7 +14,9 @@ CMLF_Code/
 
 ## Dataset Acquisition
 
-This work collected 3 stock datasets from **`Qlib`** , an AI-oriented quantitative investment platform. I use the **`CSI300`** as an example. There are six commonly used features extracted as features for **`CSI300`** datasets, including the **highest price**, the **opening price**, the **lowest price**, the **closing price**, **volume-weighted average price**, and **trading volume**.
+This work collected 3 stock datasets from [**`Qlib`**](https://github.com/microsoft/qlib) , an AI-oriented quantitative investment platform. I use the **`CSI300`** as an example. There are six commonly used features extracted as features for **`CSI300`** datasets, including the **highest price**, the **opening price**, the **lowest price**, the **closing price**, **volume-weighted average price**, and **trading volume**.
+
+> Installing `Qlib` on Mac might be difficult, so I only suggest you install it by `Clone => python setup.py install`. Although it is not the officially recommended method, it is the only one that works.
 
 All codes for downloading datasets are in  `mg_datasets/datasets_download`, so you need change directory path firstly:
 
@@ -25,8 +27,6 @@ cd mg_datasets/datasets_download
 You need to DOWNLOAD the low-frequency (daily) and high-frequency (1-hour/15 mins/5-mins/1-min), separately:
 
 - For low-frequency (daily) data:
-
-  
 
 - For 
 
