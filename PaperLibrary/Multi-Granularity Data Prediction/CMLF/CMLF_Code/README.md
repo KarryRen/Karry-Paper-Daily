@@ -16,19 +16,37 @@ CMLF_Code/
 
 This work collected 3 stock datasets from [**`Qlib`**](https://github.com/microsoft/qlib) , an AI-oriented quantitative investment platform. I use the **`CSI300`** as an example. There are six commonly used features extracted as features for **`CSI300`** datasets, including the **highest price**, the **opening price**, the **lowest price**, the **closing price**, **volume-weighted average price**, and **trading volume**.
 
-> Installing `Qlib` on Mac might be difficult, so I only suggest you install it by `Clone => python setup.py install`. Although it is not the officially recommended method, it is the only one that works.
+Installing `Qlib` on Mac might be difficult, so I only suggest you install it by `Download => python setup.py install`. Although it is not the officially recommended method, it is the only one that works. You can follow this link to install `Qlib`.
 
-All codes for downloading datasets are in  `mg_datasets/datasets_download`, so you need change directory path firstly:
+You will definitely encounter problems with dependency modules, don't worry, just install them one by one using `pip`. Because this study  just use the `Qlib` interface for data download and preprocessing.
 
-```shell
-cd mg_datasets/datasets_download
+After install the `Qlib` you need to **DOWNLOAD** the raw data by:
+
+- **Way 1. Get with module** (You can run the command everywhere ! But really slow !)
+
+  ```shell
+  # get 1d data
+  python -m qlib.run.get_data qlib_data --target_dir ~/.qlib/qlib_data/cn_data --region cn
+  
+  # get 1min data
+  python -m qlib.run.get_data qlib_data --target_dir ~/.qlib/qlib_data/cn_data_1min --region cn --interval 1min
+  ```
+
+- **Way 2. Get from source** (Faster, but you should change the path into `Qlib` directory and run the command)
+
+  ```shell
+  # get 1d data
+  python scripts/get_data.py qlib_data --target_dir ~/.qlib/qlib_data/cn_data --region cn
+  
+  # get 1min data
+  python scripts/get_data.py qlib_data --target_dir ~/.qlib/qlib_data/cn_data_1min --region cn --interval 1min
+
+After downloading the raw data, you will get the following directory structure in `username/.qlib/qlib_data/`:
+
+```python
+qlib_data/
+
 ```
-
-You need to DOWNLOAD the low-frequency (daily) and high-frequency (1-hour/15 mins/5-mins/1-min), separately:
-
-- For low-frequency (daily) data:
-
-- For 
 
 
 
