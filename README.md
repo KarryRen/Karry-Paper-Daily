@@ -1,4 +1,15 @@
-# Karry Paper Daily
+# Karry-Paper-Daily
+
+```python
+Karry-Paper-Daily/
+├── PaperLibrary # The library of all reading papers.
+    ├── Multi-Granularity Data # The paper about Multi-Granularity Data Prediction.
+        ├── CMLF # A Contrastive Learning Approach with Adaptive Fusion.
+            ├── Paper.pdf # Full paper.
+            └── Code # Reproducing code.
+```
+
+
 
 ## Mixed-frequency (MF) Data Prediction
 
@@ -6,11 +17,13 @@
 
 > **Ref**. Lin and G. Michailidis, A multi-task encoder-dual-decoder framework for mixed frequency data prediction. International Journal of Forecasting (2023), https://doi.org/10.1016/j.ijforecast.2023.08.003.
 
+
+
 ## Multi-Granularity Data Prediction
 
-### 1. Stock Trend Prediction with Multi-Granularity Data: A Contrastive Learning Approach with Adaptive Fusion
+### 1. CMLF: Stock Trend Prediction with Multi-Granularity Data: A Contrastive Learning Approach with Adaptive Fusion
 
-> **Ref.** [Raw Paper](PaperLibrary/Multi-Granularity Data/Hou_2021_CIKM_Stock Trend Prediction with Multi-granularity Data- A Contrastive Learning Approach with Adaptive Fusion.pdf)
+> **Ref.** Hou M, Xu C, Liu Y, Liu W, Bian J, Wu L, Li Z, Chen E, Liu TY. Stock trend prediction with multi-granularity data: A contrastive learning approach with adaptive fusion. InProceedings of the 30th ACM International Conference on Information & Knowledge Management 2021 Oct 26 (pp. 700-709), https://bigdata.ustc.edu.cn/paper_pdf/2021/Min-Hou-CIKM.pdf.
 
 
 
