@@ -4,10 +4,41 @@
 
 ```python
 CMLF_Code/
-├── models # The CMLF models.
-
-└── utils.py # Some util functions.
+├── mg_datasets # Codes of the Multi-granularity datasets.
+    ├── datasets_download # Cods for downloading datasets.
+        ├── download_daily_stock_dataset.py
+        ├── download_hf_stock_dataset.py
+├── models  # The CMLF models.
+└── utils.py  # Some util functions.
 ```
+
+## Dataset Acquisition
+
+This work collected 3 stock datasets from **`Qlib`** , an AI-oriented quantitative investment platform. I use the **`CSI300`** as an example. There are six commonly used features extracted as features for **`CSI300`** datasets, including the **highest price**, the **opening price**, the **lowest price**, the **closing price**, **volume-weighted average price**, and **trading volume**.
+
+All codes for downloading datasets are in  `mg_datasets/datasets_download`, so you need change directory path firstly:
+
+```shell
+cd mg_datasets/datasets_download
+```
+
+You need to DOWNLOAD the low-frequency (daily) and high-frequency (1-hour/15 mins/5-mins/1-min), separately:
+
+- For low-frequency (daily) data:
+
+  
+
+- For 
+
+
+
+## Data Preprocess and `torch.Dataset`
+
+Re-Frequency. The data are adjusted for dividends and splits, and normalized by the Z-Score method.
+
+
+
+## Training & Prediction
 
 
 
