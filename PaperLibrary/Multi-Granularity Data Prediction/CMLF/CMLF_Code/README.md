@@ -14,45 +14,52 @@ CMLF_Code/
 
 ## Dataset Acquisition
 
-This work collected 3 stock datasets from [**`Qlib`**](https://github.com/microsoft/qlib) , an AI-oriented quantitative investment platform. I use the **`CSI300`** as an example. There are six commonly used features extracted as features for **`CSI300`** datasets, including the **highest price**, the **opening price**, the **lowest price**, the **closing price**, **volume-weighted average price**, and **trading volume**.
+This work collected 3 stock (CSI300, CSI800 and NASDAQ100) datasets from [**`Qlib`**](https://github.com/microsoft/qlib) , an AI-oriented quantitative investment platform. I use the **`CSI300`** as an example in this directory. There are 5 commonly used statistics extracted as features for **`CSI300`** datasets, including the **highest price**, the **opening price**, the **lowest price**, the **closing price** and **trading volume**. Because the `Qlib` doesn't provide the **volume-weighted average price** directly, I don't use this feature while changing the label to $𝑦 = 𝑝_{𝑇+2} /𝑝_{𝑇+1} − 1$, where $𝑝_{t}$ is no longer the volume-weighted average price at day 𝑡 but the $(p_{open} + p_{close})/2$.
 
-Installing `Qlib` on Mac might be difficult, so I only suggest you install it by `Download => python setup.py install`. Although it is not the officially recommended method, it is the only one that works. You can follow this link to install `Qlib`.
+> Installing `Qlib` on Mac (M2) might be difficult, so I only suggest you install it by `Download => python setup.py install`. Although it is not the officially recommended method, it is the only one that works. You will definitely encounter problems with dependency modules, don't worry, just install them one by one using `pip`. Because this study  just use the `Qlib` interface for data download and preprocessing.
 
-You will definitely encounter problems with dependency modules, don't worry, just install them one by one using `pip`. Because this study  just use the `Qlib` interface for data download and preprocessing.
+After installing the `Qlib` you need to **DOWNLOAD** the raw stock datasets by:
 
-After install the `Qlib` you need to **DOWNLOAD** the raw data by:
-
-- **Way 1. Get with module** (You can run the command everywhere ! But really slow !)
+- **Way 1. Get with module** (Suggested)
 
   ```shell
-  # get 1d data
+  # download 1d data
   python -m qlib.run.get_data qlib_data --target_dir ~/.qlib/qlib_data/cn_data --region cn
   
-  # get 1min data
+  # download 1min data
   python -m qlib.run.get_data qlib_data --target_dir ~/.qlib/qlib_data/cn_data_1min --region cn --interval 1min
   ```
 
-- **Way 2. Get from source** (Faster, but you should change the path into `Qlib` directory and run the command)
+- **Way 2. Get from source**
 
   ```shell
-  # get 1d data
+  # download 1d data
   python scripts/get_data.py qlib_data --target_dir ~/.qlib/qlib_data/cn_data --region cn
   
-  # get 1min data
+  # download 1min data
   python scripts/get_data.py qlib_data --target_dir ~/.qlib/qlib_data/cn_data_1min --region cn --interval 1min
 
-After downloading the raw data, you will get the following directory structure in `username/.qlib/qlib_data/`:
+After downloading the raw data, you will get the following directory structure in `/Users/username/.qlib/qlib_data/`:
 
 ```python
 qlib_data/
-
+├── cn_data
+    ├── calendars
+    ├── features
+    ├── instruments
+├── cn_data_1min
+    ├── calendars
+    ├── features
+    ├── instruments
 ```
+
+**ATTENTION**: There will be a lot of difficulties throughout the way to download the data, so if you have any questions, you can communicate them by sending **issues**.
 
 
 
 ## Data Preprocess and `torch.Dataset`
 
-Re-Frequency. The data are adjusted for dividends and splits, and normalized by the Z-Score method.
+After downloading the datasets following the **Dataset Acquisition**, data preprocessing is needed to get the structured dataset. I have released preprocess code for datasets, please read them carefully and **follow the guidelines in the top comment rather than running the shell command directly !** I have also released `torch.Dataset` code for datasets.
 
 
 
