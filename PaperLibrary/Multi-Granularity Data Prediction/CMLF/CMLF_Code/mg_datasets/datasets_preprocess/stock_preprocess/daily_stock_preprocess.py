@@ -18,7 +18,7 @@ During the preprocessing, we wil do operations by the following steps:
     1. Change the `PATH` based on your situation.
     2. Load the daily feature and label. (665 stocks data in 3081 days)
     3. Swip the index and sort the df.
-    4. Save the dataframe to `.pkl` file
+    4. Save the dataframe to `.pkl` file (a df with `datetime-stock` index).
 
 All in all, after downloading the file from the web, you need:
     1. Create the directory structure `BY HAND` following the top comment.
