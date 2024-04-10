@@ -5,10 +5,11 @@
 ```python
 CMLF_Code/
 ├── mg_datasets # Codes of the Multi-granularity datasets.
-    ├── datasets_download # Cods for downloading datasets.
-        ├── download_daily_stock_dataset.py
-        ├── download_hf_stock_dataset.py
+    ├── datasets_preprocess # Codes for preprocessing datasets.
+    ├── loaders # Data loader for train.
 ├── models  # The CMLF models.
+    ├── contrastive_all_2_encoder.py # The pre-train stage: Contrastive Mechanisms.
+
 └── utils.py  # Some util functions.
 ```
 
@@ -55,8 +56,14 @@ qlib_data/
 
 **ATTENTION**: There will be a lot of difficulties throughout the way to download the data, so if you have any questions, you can communicate them by sending **issues**.
 
+
+
 ## Data Preprocess and `torch.Dataset`
 
 After downloading the datasets following the **Dataset Acquisition**, data preprocessing is needed to get the structured dataset. I have released preprocess code for datasets, please read them carefully and **follow the guidelines in the top comment rather than running the shell command directly !** I have also released `torch.Dataset` code for datasets.
 
 After downloading the data, I find that the period of dataset is not right ! So I have no other choices but to change the downloading way.
+
+
+
+## Model Structure

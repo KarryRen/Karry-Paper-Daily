@@ -1,19 +1,18 @@
-import copy
-import numpy as np
+# -*- coding: utf-8 -*-
+# @Time    : 2024/4/9 16:12
+# @Author  : Karry Ren
 
+""" The pre-train stage: Contrastive Mechanisms. """
+
+import copy
+from typing import List
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
-from common.utils import pprint, AverageMeter
-from common.functions import get_loss_fn, get_metric_fn
-
 from sacred import Ingredient
 
-model_ingredient = Ingredient('contrastive_all_2_encoder')
 
-
-@model_ingredient.config
 def model_config():
     # architecture
     input_shape = [6, 60]
@@ -32,137 +31,158 @@ def model_config():
     negative_sample = 5
 
 
-class Model(nn.Module):
-    @model_ingredient.capture
-    def __init__(self,
-                 input_shape,
-                 rnn_type='LSTM',
-                 rnn_layer=2,
-                 hid_size=64,
-                 dropout=0,
-                 optim_method='Adam',
-                 optim_args={'lr': 1e-3},
-                 loss_fn='mse',
-                 eval_metric='corr',
-                 negative_sample=5):
+class CM_Model(nn.Module):
+    def __init__(
+            self, input_shape: List[List[int]], rnn_type: str = "LSTM", rnn_layer: int = 2,
+            hidden_size: int = 64, dropout: float = 0.0,
+            optim_method: str = "Adam", optim_params: dict = {"lr": 1e-3}, loss_fn: str = "mse",
+            eval_metric: str = "corr", negative_sample_num: int = 5
+    ):
+        """ The init function of CM_Model.
 
-        super().__init__()
+        :param input_shape: the input shape list [[D, K1, T], [D, K2, T]]
+        :param rnn_type: the type of rnn
+        :param rnn_layer: the layer of rnn
+        :param hidden_size: the hidden size of rnn
+        :param dropout: the dropout ratio
+        :param optim_method: the optimizing method
+        :param optim_params: the optimizing param
+        :param loss_fn: the loss function
+        :param eval_metric: the eval metric
+        :param negative_sample_num: the number of negative sample when using the 2 contrastive learning
 
-        # Architecture
-        self.hid_size = hid_size
-        self.input_size = input_shape[0][0]  # feature num
-        self.input_day = input_shape[0][2]
-        self.input_daily_length = input_shape[0][1]
-        self.input_highfreq_length = input_shape[1][1]
+        """
+
+        super(CM_Model, self).__init__()
+
+        # ---- Get the param ---- #
+        self.hidden_size = hidden_size
+        self.input_size = input_shape[0][0]  # D
+        self.input_day = input_shape[0][2]  # T
+        self.input_daily_K = input_shape[0][1]  # K1
+        self.input_hf_K = input_shape[1][1]  # K2
         self.dropout = dropout
         self.rnn_layer = rnn_layer
         self.rnn_type = rnn_type
-        self.negative_sample = negative_sample
+        self.negative_sample_num = negative_sample_num
 
+        # ---- Using the param to buidl model ---- #
         self._build_model()
 
-        # Optimization
-        self.optimizer = getattr(optim, optim_method)(self.parameters(),
-                                                      **optim_args)
-        self.loss_fn = get_loss_fn(loss_fn)
-        self.metric_fn = get_metric_fn(eval_metric)
+        # ---- The optimizer ---- #
+        self.optimizer = getattr(optim, optim_method)(self.parameters(), **optim_params)
 
-        if torch.cuda.is_available():
-            self.cuda()
+        # self.loss_fn = get_loss_fn(loss_fn)
+        # self.metric_fn = get_metric_fn(eval_metric)
+        #
+        # if torch.cuda.is_available():
+        #     self.cuda()
 
     def _build_model(self):
+        # ---- Build the rnn ---- #
         try:
-            klass = getattr(nn, self.rnn_type.upper())
+            rnn_module = getattr(nn, self.rnn_type.upper())
         except:
-            raise ValueError('unknown rnn_type `%s`' % self.rnn_type)
+            raise ValueError(f"unknown rnn_type `{self.rnn_type}` !!!")
+
+        # ---- Encoder 1. ---- #
+        # for daily data
         self.net_daily_1 = nn.Sequential()
-        self.net_daily_1.add_module('fc_in_daily_1', nn.Linear(in_features=self.input_size, out_features=self.hid_size))
-        self.net_daily_1.add_module('act_daily_1', nn.Tanh())
-        self.net_highfreq_1 = nn.Sequential()
-        self.net_highfreq_1.add_module('fc_in_highfreq_1', nn.Linear(in_features=self.input_size, out_features=self.hid_size))
-        self.net_highfreq_1.add_module('act_highfreq_1', nn.Tanh())
-        self.rnn_highfreq_1 = klass(input_size=self.hid_size,
-                                    hidden_size=self.hid_size,
-                                    num_layers=self.rnn_layer,
-                                    batch_first=True,
-                                    dropout=self.dropout)
+        self.net_daily_1.add_module("fc_in_daily_1", nn.Linear(in_features=self.input_size, out_features=self.hidden_size))
+        self.net_daily_1.add_module("act_daily_1", nn.Tanh())
+        # for hf data
+        self.net_hf_1 = nn.Sequential()
+        self.net_hf_1.add_module("fc_in_hf_1", nn.Linear(in_features=self.input_size, out_features=self.hidden_size))
+        self.net_hf_1.add_module("act_hf_1", nn.Tanh())
+        self.rnn_hf_1 = rnn_module(
+            input_size=self.hidden_size, hidden_size=self.hidden_size, num_layers=self.rnn_layer, batch_first=True, dropout=self.dropout
+        )
 
+        # ---- Encoder 2. ---- #
+        # for daily data
         self.net_daily_2 = nn.Sequential()
-        self.net_daily_2.add_module('fc_in_daily_2', nn.Linear(in_features=self.input_size, out_features=self.hid_size))
-        self.net_daily_2.add_module('act_daily_2', nn.Tanh())
-        self.net_highfreq_2 = nn.Sequential()
-        self.net_highfreq_2.add_module('fc_in_highfreq_2',
-                                       nn.Linear(in_features=self.input_size, out_features=self.hid_size))
-        self.net_highfreq_2.add_module('act_highfreq_2', nn.Tanh())
-        self.rnn_highfreq_2 = klass(input_size=self.hid_size,
-                                    hidden_size=self.hid_size,
-                                    num_layers=self.rnn_layer,
-                                    batch_first=True,
-                                    dropout=self.dropout)
+        self.net_daily_2.add_module("fc_in_daily_2", nn.Linear(in_features=self.input_size, out_features=self.hidden_size))
+        self.net_daily_2.add_module("act_daily_2", nn.Tanh())
+        # for hf data
+        self.net_hf_2 = nn.Sequential()
+        self.net_hf_2.add_module("fc_in_hf_2", nn.Linear(in_features=self.input_size, out_features=self.hidden_size))
+        self.net_hf_2.add_module('act_hf_2', nn.Tanh())
+        self.rnn_hf_2 = rnn_module(
+            input_size=self.hidden_size, hidden_size=self.hidden_size, num_layers=self.rnn_layer, batch_first=True, dropout=self.dropout
+        )
 
-        # self.rnn_daily = klass(input_size=self.hid_size + self.input_size,
-        self.rnn_daily_1 = klass(input_size=self.hid_size * 2,
-                                 hidden_size=self.hid_size,
-                                 num_layers=self.rnn_layer,
-                                 batch_first=True,
-                                 dropout=self.dropout)
-        self.fc_out_1 = nn.Linear(in_features=self.hid_size, out_features=self.hid_size)  # point contrast weight
-        self.fc_out_2 = nn.Linear(in_features=self.hid_size, out_features=1)  # output fc
-        self.fc_out_3 = nn.Linear(in_features=self.hid_size, out_features=self.hid_size * 2)  # trend contrast weight
+        self.rnn_daily = rnn_module(
+            input_size=self.hidden_size * 2, hidden_size=self.hidden_size, num_layers=self.rnn_layer, batch_first=True, dropout=self.dropout
+        )
 
-    def forward(self, data_daily, data_highfreq):
-        data_highfreq = data_highfreq.view(-1, self.input_day, self.input_size, self.input_highfreq_length)
-        arr_1 = []
-        arr_2 = []
-        for i in range(self.input_day):
-            input = data_highfreq[:, i, :, :]  # [batch, input_day, input_size, seq_len] -> [batch, input_size, seq_len]
-            input = input.permute(0, 2, 1)  # [batch, input_size, seq_len] -> [batch, seq_len, input_size ]
-            # pprint(f'input_shape {input.shape}')
-            out_1, _ = self.rnn_highfreq_1(self.net_highfreq_1(input))
-            out_1 = out_1[:, -1, :].unsqueeze(1)  # [batch, seq_len, hid_size] -> [batch, 1, hid_size]
-            arr_1.append(out_1)
-            out_2, _ = self.rnn_highfreq_2(self.net_highfreq_2(input))
-            out_2 = out_2[:, -1, :].unsqueeze(1)  # [batch, seq_len, hid_size] -> [batch, 1, hid_size]
-            arr_2.append(out_2)
-        day_reps_1 = torch.cat(arr_1, dim=1)  # arr: [batch, 1, hid_size] * input_day -> [batch, input_day, input_size]
-        day_reps_2 = torch.cat(arr_2, dim=1)
-        data_daily = data_daily.view(-1, self.input_size, self.input_day)
-        data_daily = data_daily.permute(0, 2, 1)  # [batch, input_size, seq_len] -> [batch, seq_len, input_size]
-        data_daily_1 = self.net_daily_1(data_daily)  # [batch, seq_len, input_size] -> [batch, seq_len, hidden_size]
-        data_daily_2 = self.net_daily_2(data_daily)
+        self.fc_pred = nn.Linear(in_features=self.hidden_size, out_features=1)  # output fc
+        self.fc_point = nn.Linear(in_features=self.hidden_size, out_features=self.hidden_size)  # point contrast weight
+        self.fc_trend = nn.Linear(in_features=self.hidden_size, out_features=self.hidden_size * 2)  # trend contrast weight
 
-        # Point contrast
-        context = self.fc_out_1(data_daily_1)
+    def forward(self, x_daily: torch.Tensor, x_hf: torch.Tensor):
+        """ Forward function of CM_Model.
+
+        :param x_daily: the daily feature, shape=(bs, D, 1, T)
+        :param x_hf: the high frequency feature, shape=(bs, D, K, T)
+
+        """
+
+        # ---- Step 1. Encoding the high freq feature ---- #
+        x_hf = x_hf.permute(0, 3, 1, 2)  # shape from (bs, D, K, T) to (bs, T, D, K)
+        out_arr_hf_1, out_arr_hf_2 = [], []
+        for i in range(self.input_day):  # day by day
+            # prepare the input
+            x_hf_1day = x_hf[:, i, :, :]  # shape=(bs, D, K)
+            x_hf_1day = x_hf_1day.permute(0, 2, 1)  # shape from (bs, D, K) to (bs, K, D)
+            # encoder 1
+            out_hf_1, _ = self.rnn_hf_1(self.net_hf_1(x_hf_1day))  # fc the x_hf_1day to (bs, K, hidden_size)
+            out_hf_1 = out_hf_1[:, -1, :].unsqueeze(1)  # get the last step hidden state, (bs, 1, hidden_size)
+            out_arr_hf_1.append(out_hf_1)
+            # encoder 2
+            out_2, _ = self.rnn_hf_2(self.net_hf_2(x_hf_1day))
+            out_2 = out_2[:, -1, :].unsqueeze(1)  # get the last step hidden state, (bs, 1, hidden_size)
+            out_arr_hf_2.append(out_2)
+        x_hf_day_reps_1 = torch.cat(out_arr_hf_1, dim=1)  # shape from input_day*(bs, 1, hidden_size) to (bs, input_day, input_size)
+        x_hf_day_reps_2 = torch.cat(out_arr_hf_2, dim=1)  # shape from input_day*(bs, 1, hidden_size) to (bs, input_day, input_size)
+
+        # ---- Step 2. Encoding the daily feature ---- #
+        x_daily = x_daily.reshape(-1, self.input_size, self.input_day)  # shape from (bs, D, 1, T) to (bs, D, T)
+        x_daily = x_daily.permute(0, 2, 1)  # shape from (bs, D, T) to (bs, T, D)
+        x_daily_1 = self.net_daily_1(x_daily)  # shape from (bs, T, D) to (bs, T, hidden_size)
+        x_daily_2 = self.net_daily_2(x_daily)  # shape from (bs, T, D) to (bs, T, hidden_size)
+
+        # ---- Step 3. Get prediction ---- #
+        pred_1, _ = self.rnn_daily(torch.cat((x_daily_2 + x_hf_day_reps_2, x_daily_1 + x_hf_day_reps_2), dim=2))
+        out = self.fc_pred(pred_1[:, -1, :])  # (bs, 1)
+
+        # ---- Step 4. Point contrast ---- #
+        context = self.fc_point(x_daily_1)  # (bs, T, hidden_size)
         point_contrast_loss = 0
-        for i in range(self.input_day):
-            daily_input = context[:, i, :]  # [batch, seq_len, hidden_size] -> [batch, hidden_size]
-            highfreq_input = day_reps_1[:, i, :]  # [batch, seq_len, hidden_size] -> [batch, hidden_size]
-            highfreq_input = self._generate_highfreq_data(highfreq_input)
+        for i in range(self.input_day):  # for-loop each day
+            daily_input = context[:, i:i + 1, :]  # shape from (batch, T, hidden_size) to (batch, 1, hidden_size)
+            hf_daily_input = x_hf_day_reps_1[:, i:i + 1, :]  # shape from (batch, T, hidden_size) to (batch, 1, hidden_size)
+            pn_hf_daily_input = self._generate_hf_data(hf_daily_input)  # generate the negative daily input, (batch, 1+n_num, hidden_size)
+            dot_product = torch.mean(pn_hf_daily_input * daily_input, -1)  # shape=(batch, 1+negative_sample_num)
+            log_l1 = torch.nn.functional.log_softmax(dot_product, dim=1)[:, 0]  # only get the positive one ! (bs)
+            point_contrast_loss += -torch.mean(log_l1)  # pair contrast loss
 
-            highfreq_input = torch.reshape(highfreq_input, (-1, 1 + self.negative_sample, self.hid_size))
-            daily_input = torch.unsqueeze(daily_input, 1)  # [batch, 1, hidden_size]
-            dot_product = torch.mean(highfreq_input * daily_input, -1)
-            log_l1 = torch.nn.functional.log_softmax(dot_product, dim=1)[:, 0]
-            point_contrast_loss += -torch.mean(log_l1)
+        # ---- Step 5. Trend contrast ---- #
+        new_data_daily = torch.reshape(
+            torch.cat((x_daily_2 + x_hf_day_reps_2, x_daily_1 + x_hf_day_reps_2), dim=2),
+            (-1, self.input_day * 2 * self.hidden_size)
+        )  # shape=(bs, T*2*hidden_size)
+        new_data_daily = self._generate_data(new_data_daily, size=self.hidden_size * 2)
+        new_data_daily = torch.reshape(new_data_daily, (-1, self.input_day + self.negative_sample_num, self.hidden_size * 2))
+        next = new_data_daily[:, -1 - self.negative_sample_num:, :]  # last step, shape=(bs, 1+negative_sample_num, hidden_size)
 
-        pred_1, _ = self.rnn_daily_1(torch.cat((data_daily_2 + day_reps_2, data_daily_1 + day_reps_1), dim=2))
-        out = self.fc_out_2(pred_1[:, -1, :])
-
-        # Trend contrast
-        new_data_daily = torch.reshape(torch.cat((data_daily_2 + day_reps_2, data_daily_1 + day_reps_1), dim=2),
-                                       (-1, self.hid_size * 2 * self.input_day))
-        new_data_daily = self._generate_data(new_data_daily, size=self.hid_size * 2)
-        new_data_daily = torch.reshape(new_data_daily, (-1, self.input_day + self.negative_sample, self.hid_size * 2))
-        next = new_data_daily[:, -1 - self.negative_sample:, :]
-        context_trend = self.fc_out_3(pred_1[:, -2, :])
-        context_trend = torch.unsqueeze(context_trend, 1)
-        dot_product_trend = torch.mean(next * context_trend, -1)
-        log_l1 = torch.nn.functional.log_softmax(dot_product_trend, dim=1)[:, 0]
-        trend_contrast_loss = -torch.mean(log_l1)
+        context_trend = self.fc_trend(pred_1[:, -2, :])  # last 2, shape=(bs, hidden_size)
+        context_trend = torch.unsqueeze(context_trend, 1)  # shape from (bs, hidden_size) to shape=(bs, 1, hidden_size)
+        dot_product_trend = torch.mean(next * context_trend, -1)  # can be changed to bmm no need mean
+        log_l2 = torch.nn.functional.log_softmax(dot_product_trend, dim=1)[:, 0]  # only the positive one
+        trend_contrast_loss = -torch.mean(log_l2)
 
         return 0.05 * point_contrast_loss + trend_contrast_loss, out[..., 0]
 
-    @model_ingredient.capture
     def fit(self,
             train_set,
             valid_set,
@@ -247,27 +267,49 @@ class Model(nn.Module):
         self.load_state_dict(best_params)
 
     def _generate_data(self, data, size):
-        # [batch_size, previous_day+1(true)] -> [batch_size, (previous_day+1(true)+negative_sample)*feature_size]
+        """ Generate the negative data from the same mini-batch.
+
+        :param data: raw high-frequency data (positive), shape=(bs, 1, hidden_size)
+
+        return:
+            - new_data, shape=(bs, 1+negative_sample_num, hidden_size), the first one is positive
+
+        """
+
         new_data = data.clone()
         data_lastday = data.clone()[:, -size:]
-        for i in range(self.negative_sample):
+        for i in range(self.negative_sample_num):
             random_list_1 = torch.randperm(data_lastday.size(0))
             random_list_2 = torch.randperm(data_lastday.size(0))
-            random_list = torch.where(random_list_1 - torch.arange(data_lastday.size(0)) == 0, random_list_2,
-                                      random_list_1)
+            random_list = torch.where(random_list_1 - torch.arange(data_lastday.size(0)) == 0, random_list_2, random_list_1)
             random_lastday = data_lastday[random_list]
             new_data = torch.cat((new_data, random_lastday), 1)
         return new_data
 
-    def _generate_highfreq_data(self, data):
-        # [batch_size, previous_day+1(true)] -> [batch_size, (previous_day+1(true)+negative_sample)*feature_size]
-        new_data = data.clone()
-        for i in range(self.negative_sample):
-            random_list_1 = torch.randperm(data.size(0))
-            random_list_2 = torch.randperm(data.size(0))
-            random_list = torch.where(random_list_1 - torch.arange(data.size(0)) == 0, random_list_2,
-                                      random_list_1)
-            random_data = data[random_list]
+    def _generate_hf_data(self, raw_hf_data: torch.Tensor):
+        """ Generate the negative high-frequency data from the same mini-batch.
+
+        :param raw_hf_data: raw high-frequency data (positive), shape=(bs, 1, hidden_size)
+
+        return:
+            - new_data, shape=(bs, 1+negative_sample_num, hidden_size), the first one is positive
+
+        """
+
+        # ---- Step 1. Clone the data ---- #
+        new_data = raw_hf_data.clone()
+
+        # ---- Step 2. Generate the negative sample ---- #
+        for i in range(self.negative_sample_num):
+            random_list = torch.randperm(raw_hf_data.shape[0])  # [0, bs-1] random
+            for j in range(raw_hf_data.shape[0]):
+                if j != random_list[j]:
+                    continue
+                if j == random_list[j] and j == 0:
+                    random_list[j] = torch.randint(1, raw_hf_data.shape[0], (1,))[0]
+                elif j == random_list[j]:
+                    random_list[j] = torch.randint(0, j, (1,))[0]
+            random_data = raw_hf_data[random_list]  # gen 1 negative sample for each sample
             new_data = torch.cat((new_data, random_data), 1)
         return new_data
 
@@ -290,3 +332,11 @@ class Model(nn.Module):
 
     def load(self, model_path, strict=True):
         self.load_state_dict(torch.load(model_path), strict=strict)
+
+
+if __name__ == '__main__':  # test the model
+    bs, T, D = 2, 2, 3
+    x_daily = torch.randn((bs, D, 1, T))
+    x_1h = torch.randn((bs, D, 4, T))
+    model = CM_Model(input_shape=[[3, 1, 2], [3, 4, 2]])
+    y = model(x_daily, x_1h)
