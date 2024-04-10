@@ -27,10 +27,10 @@ All in all, after downloading the file from the web, you need:
 
 """
 
-import qlib
-from qlib.data import D
 import pandas as pd
 from typing import List, Tuple
+import qlib
+from qlib.data import D
 
 
 def load_daily_stock_dataset(market: str = "csi300") -> Tuple[pd.DataFrame, List[str], List[str]]:
