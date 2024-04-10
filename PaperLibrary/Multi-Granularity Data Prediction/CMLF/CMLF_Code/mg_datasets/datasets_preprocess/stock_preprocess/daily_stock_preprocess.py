@@ -2,13 +2,13 @@
 # @Time    : 2024/4/9 16:12
 # @Author  : Karry Ren
 
-""" Please follow the `README.md` to download the daily stock dataset,
+""" Please follow the `README.md` to download the 1-day stock dataset,
       and get the directory like:
         /Users/username/.qlib/qlib_data/qlib_data/
             ├── cn_data
                 ├── calendars
                 ├── features
-                ├── instruments
+                └── instruments
 Please make sure you have this directory and the dataset is right !!!
 
 Because I want to make the code clear and beautiful, so I need you to do some directory creation by hand !!!
@@ -76,7 +76,7 @@ def load_daily_stock_dataset(market: str = "csi300") -> Tuple[pd.DataFrame, List
     feature_name_list += [f"VOLUME{day}" for day in range(0, 20)]  # append the name
     # use qlib to load features
     print("|| LOAD FEATURES NOW ||")
-    daily_stock_df = D.features(D.instruments(market), fields=feature_field_list, start_time="2007-02-16", end_time="2020-01-01")
+    daily_stock_df = D.features(D.instruments(market), fields=feature_field_list, start_time="2007-02-16", end_time="2020-01-01", freq="day")
     daily_stock_df.columns = feature_name_list  # change the name
     print("|| LOAD FEATURES OVER ||")
 
@@ -85,18 +85,18 @@ def load_daily_stock_dataset(market: str = "csi300") -> Tuple[pd.DataFrame, List
     label_field_list = ["(Ref($close, -2) + Ref($open, -2))/(Ref($close, -1) + Ref($open, -1)) - 1"]
     label_name_list = ["LABEL"]
     print("|| LOAD LABEL NOW ||")
-    df_labels = D.features(D.instruments(market), fields=label_field_list, start_time="2007-02-16", end_time="2020-01-01")
+    df_labels = D.features(D.instruments(market), fields=label_field_list, start_time="2007-02-16", end_time="2020-01-01", freq="day")
     df_labels.columns = label_name_list  # change the name
     daily_stock_df[label_name_list] = df_labels  # append label column to df
     print("|| LOAD LABEL OVER ||")
 
     # ---- Step 3. Do the summary of df ---- #
-    stock_idx_set, trading_date_set = set(), set()  # define the empty set
+    stock_code_set, trading_date_set = set(), set()  # define the empty set
     print("|| DO SUMMARY NOW ||")
     for idx in daily_stock_df.index:
-        stock_idx_set.add(idx[0])  # add stock idx
+        stock_code_set.add(idx[0])  # add stock idx
         trading_date_set.add(idx[1])  # add trading date
-    print(f"|| The `{market}` dataset includes `{len(stock_idx_set)}` stock_idx and `{len(trading_date_set)}` trading_date. ||")
+    print(f"|| The `{market}` dataset includes `{len(stock_code_set)}` stock_code and `{len(trading_date_set)}` trading_date. ||")
     print("|| DO SUMMARY OVER ||")
 
     # ---- Return ---- #
@@ -106,11 +106,11 @@ def load_daily_stock_dataset(market: str = "csi300") -> Tuple[pd.DataFrame, List
 if __name__ == '__main__':
     # ---- Step 1. Change the `PATH` based on your situation ---- #
     CSI300_STOCK_DATASET_PATH = "../../../../CMLF_Dataset/CSI300"
-    print("************************** BEGIN CSI300 STOCK DATASET PREPROCESSING **************************")
+    print("************************** BEGIN DAILY CSI300 STOCK DATASET PREPROCESSING **************************")
 
     # ---- Step 2. Load the daily feature and label ---- #
     print("************************** BEGIN LOADING DAILY STOCK DATASET **************************")
-    qlib.init()  # init the qlib
+    qlib.init(provider_uri={"day": "/Users/karry/.qlib/qlib_data/cn_data"})  # init the qlib
     daily_stock_df, _, _ = load_daily_stock_dataset(market="csi300")  # load the stock dataset
     print("************************** FINISH LOADING DAILY STOCK DATASET **************************")
 
