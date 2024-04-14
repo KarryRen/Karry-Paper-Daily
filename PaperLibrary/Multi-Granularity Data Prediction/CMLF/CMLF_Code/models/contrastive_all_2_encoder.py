@@ -178,7 +178,7 @@ class CM_Model(nn.Module):
         context_trend = self.fc_trend(pred_1[:, -2, :])  # last 2, shape=(bs, hidden_size)
         context_trend = torch.unsqueeze(context_trend, 1)  # shape from (bs, hidden_size) to shape=(bs, 1, hidden_size)
         dot_product_trend = torch.mean(next * context_trend, -1)  # can be changed to bmm no need mean
-        log_l2 = torch.nn.functional.log_softmax(dot_product_trend, dim=1)[:, 0]  # only the positive one
+        log_lf2 = torch.nn.functional.log_softmax(dot_product_trend, dim=1)[:, 0]  # only the positive one
         trend_contrast_loss = -torch.mean(log_l2)
 
         return 0.05 * point_contrast_loss + trend_contrast_loss, out[..., 0]
@@ -266,7 +266,7 @@ class CM_Model(nn.Module):
         # restore
         self.load_state_dict(best_params)
 
-    def _generate_data(self, data, size):
+    def _random_select_ng_sample(self, data, size):
         """ Generate the negative data from the same mini-batch.
 
         :param data: raw high-frequency data (positive), shape=(bs, 1, hidden_size)
