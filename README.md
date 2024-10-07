@@ -3,7 +3,7 @@
 ```python
 Karry-Paper-Daily/
 ├── PaperLibrary # The library of all reading papers.
-    ├── Multi-Granularity Data # The paper about Multi-Granularity Data Prediction.
+    ├── Multi-Granularity Data Prediction # The paper about Multi-Granularity Data Prediction.
         ├── CMLF # A Contrastive Learning Approach with Adaptive Fusion.
             ├── Paper.pdf # Full paper.
             └── Code # Reproducing code.
@@ -13,7 +13,7 @@ Karry-Paper-Daily/
 
 ## Mixed-frequency (MF) Data Prediction
 
-### 1. A multi-task encoder-dual-decoder framework for mixed frequency data prediction
+### 1. A multi-task encoder-dual-decoder framework for mixed-frequency data prediction
 
 > **Ref**. Lin and G. Michailidis, A multi-task encoder-dual-decoder framework for mixed frequency data prediction. International Journal of Forecasting (2023), https://doi.org/10.1016/j.ijforecast.2023.08.003.
 
@@ -68,8 +68,8 @@ Introduce technical indicators to describe the market state and further design a
 
 - **Technical Indicator Construction**: We choose some traditional technical indicators as well as design two novel indicators based on the relationship between multi-granularity data inspired by a couple of intuitions from the real-world.
 
-  - Utilize some **well-recognized technical indicators** that are mathematically calculated on a time series of prices and returns: volatility, momentum, trend.
-  - Construct two novel MI indicators by using the discriminators learned from the pre-training stage: The first one is the **MI of the coarse and fine-grained data at the current time-step**, which can imply the short-term volatility of prices. The second one is the **MI between historical trend and the present status**, which reflects the long-term coherence through the continuity between historical and present prices. 
+  - Utilize some **well-recognized technical indicators** that are mathematically calculated on a time series of prices and returns: volatility, momentum, and trend.
+  - Construct two novel MI indicators by using the discriminators learned from the pre-training stage: The first one is the **MI of the coarse and fine-grained data at the current time-step**, which can imply the short-term volatility of prices. The second one is the **MI between historical trends and the present status**, which reflects the long-term coherence through the continuity between historical and present prices. 
 
 - **Adaptive Multi-Granularity Fusion Module**: Fuse all indicators.
 
@@ -87,7 +87,7 @@ Introduce technical indicators to describe the market state and further design a
 
 ### 1. DiT: Scalable Diffusion Models with Transformers
 
-> **Ref.** [ZhiHu Artical](https://zhuanlan.zhihu.com/p/682815406)
+> **Ref.** [ZhiHu Article](https://zhuanlan.zhihu.com/p/682815406)
 
 
 
@@ -95,15 +95,15 @@ Introduce technical indicators to describe the market state and further design a
 
 ### 1. VM-UNet: Vision Mamba UNet for Medical Image Segmentation
 
-> **Ref.** [ZhiHu Artical](https://zhuanlan.zhihu.com/p/683480010)
+> **Ref.** [ZhiHu Article](https://zhuanlan.zhihu.com/p/683480010)
 
  
 
-## Time Series Forcasting
+## Time Series Forecasting
 
 ### 1. Autoformer
 
 > **Ref.** [Raw Paper](PaperLibrary/Autoformer.pdf)
 
-### 
+
 

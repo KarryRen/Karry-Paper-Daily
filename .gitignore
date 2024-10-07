@@ -1,6 +1,9 @@
 # Mac bad file
 .DS_Store
 
+# Dataset directories:
+CMLF_Dataset/
+
 # idea
 .idea/
 
